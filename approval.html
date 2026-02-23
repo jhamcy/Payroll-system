@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Approvals | Payroll Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg-blue: #58ccff; 
+            --card-white: #ffffff;
+            --sidebar-width: 240px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-blue); margin: 0; display: flex; min-height: 100vh; }
+        
+        nav { background: var(--dark); color: white; width: var(--sidebar-width); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; z-index: 1000; }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav a { display: flex; align-items: center; color: #d1d5db; text-decoration: none; padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; margin: 4px 0; }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+
+        main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; box-sizing: border-box; }
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); }
+
+        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--dark); }
+
+        .card { background: var(--card-white); padding: 25px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 13px; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+
+        .btn-approve { background: #3ecf8e; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-reject { background: #ff4d4d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
+
+        .badge-pending { background: #fff7ed; color: #c2410c; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .leave-type-tag { font-size: 11px; font-weight: bold; color: var(--dark); background: #e0f2fe; padding: 2px 6px; border-radius: 4px; }
+
+        @media (max-width: 1024px) {
+            nav { width: 100%; height: auto; position: fixed; flex-direction: row; top: 0; left: 0; padding: 10px; overflow-x: auto; white-space: nowrap; gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1); }
+            nav h2 { display: none; }
+            main { margin-left: 0; margin-top: 80px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Admin Panel</h2>
+        <a href="dashboard.html">🏠 Home</a>
+        <a href="admin-dashboard.html">🛠️ Control Panel</a>
+        <a href="approval.html" class="active">⏳ Approvals</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Management Approvals</h1>
+        
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('leaves')">Leave Requests</button>
+            <button class="tab-btn" onclick="switchTab('payroll')">Payroll Verification</button>
+        </div>
+
+        <div class="card" id="leaveTab">
+            <h3>Pending Leaves</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Type</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="leaveTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="payrollTab" style="display:none;">
+            <h3>Pending Payroll Releases</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Total Net Payout</th>
+                        <th>Count</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollTableBody">
+                    <tr>
+                        <td>Feb 01 - Feb 15, 2026</td>
+                        <td><strong>₱ 450,200.00</strong></td>
+                        <td>24 Employees</td>
+                        <td><button class="btn-approve">Release Funds</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function switchTab(tab) {
+            document.getElementById('leaveTab').style.display = tab === 'leaves' ? 'block' : 'none';
+            document.getElementById('payrollTab').style.display = tab === 'payroll' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', (idx === 0 && tab === 'leaves') || (idx === 1 && tab === 'payroll'));
+            });
+        }
+
+        async function loadLeaves() {
+            const tbody = document.getElementById('leaveTableBody');
+            const { data, error } = await _supabase.from('leaves').select('*').eq('status', 'Pending');
+            
+            if (error || !data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #94a3b8;">No pending requests found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(leave => {
+                const start = new Date(leave.start_date);
+                const end = new Date(leave.end_date);
+                const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+                return `
+                <tr>
+                    <td><strong>${leave.employee_name}</strong><br><small>${leave.employee_id}</small></td>
+                    <td><span class="leave-type-tag">${leave.leave_type}</span></td>
+                    <td>${leave.start_date} to ${leave.end_date}<br><small>(${days} Day/s)</small></td>
+                    <td><span class="badge-pending">${leave.status}</span></td>
+                    <td>
+                        <button class="btn-approve" onclick="processApproval('${leave.id}', '${leave.employee_id}', '${leave.leave_type}', ${days})">Approve</button>
+                        <button class="btn-reject" onclick="updateStatus('${leave.id}', 'Rejected')">Reject</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function processApproval(leaveId, empId, type, days) {
+            if(!confirm(`Approve this request and deduct ${days} day/s from balance?`)) return;
+
+            // 1. Determine which column to deduct from
+            let column = "";
+            if (type === "Vacation Leave" || type === "VL") column = "vl_balance";
+            else if (type === "Sick Leave" || type === "SL") column = "sl_balance";
+            else if (type === "Solo Parent Leave" || type === "SPL") column = "spl_balance";
+
+            if (column) {
+                // 2. Fetch current balance
+                const { data: emp } = await _supabase.from('employees').select(column).eq('id_number', empId).single();
+                
+                if (emp && emp[column] >= days) {
+                    const newBalance = emp[column] - days;
+                    // 3. Update employee balance
+                    await _supabase.from('employees').update({ [column]: newBalance }).eq('id_number', empId);
+                } else {
+                    alert("Warning: Employee has insufficient leave balance, but request will be approved.");
+                }
+            }
+
+            // 4. Update Leave Request Status
+            updateStatus(leaveId, 'Approved');
+        }
+
+        async function updateStatus(id, newStatus) {
+            const { error } = await _supabase.from('leaves').update({ status: newStatus }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else {
+                alert(`Request ${newStatus}`);
+                loadLeaves();
+            }
+        }
+
+        function handleLogout() { localStorage.clear(); window.location.href = 'index.html'; }
+        loadLeaves();
+    </script>
+</body>
+</html>

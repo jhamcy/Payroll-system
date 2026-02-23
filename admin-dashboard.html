@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel | Payroll Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg-blue: #58ccff; 
+            --card-white: #ffffff;
+            --sidebar-width: 240px;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-blue); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh;
+        }
+        
+        /* --- SIDEBAR --- */
+        nav { 
+            background: var(--dark); color: white; width: var(--sidebar-width); height: 100vh;
+            position: fixed; left: 0; top: 0; display: flex; flex-direction: column;
+            padding: 20px; box-sizing: border-box; z-index: 1000;
+        }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav a { 
+            display: flex; align-items: center; color: #d1d5db; text-decoration: none; 
+            padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; margin: 4px 0;
+        }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
+
+        /* --- CONTENT --- */
+        main { margin-left: var(--sidebar-width); padding: 40px; width: 100%; box-sizing: border-box; }
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
+        p.subtitle { color: white; opacity: 0.9; margin-bottom: 30px; }
+
+        /* --- CONTROL PANEL GRID --- */
+        .admin-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 25px; 
+        }
+
+        .control-card {
+            background: var(--card-white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .control-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+
+        .icon-circle {
+            width: 70px; height: 70px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; margin-bottom: 20px;
+        }
+
+        .control-card h3 { margin: 10px 0; color: var(--dark); font-size: 1.25rem; }
+        .control-card p { color: #64748b; font-size: 0.9rem; line-height: 1.5; margin: 0; }
+
+        .bg-payroll { background: #ecfdf5; color: #10b981; }
+        .bg-employee { background: #eff6ff; color: #3b82f6; }
+        .bg-approval { background: #fff7ed; color: #f59e0b; }
+        .bg-reports { background: #f5f3ff; color: #8b5cf6; }
+
+        /* --- MOBILE --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            nav { width: 100%; height: auto; position: fixed; flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap; gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1); }
+            nav h2 { display: none; }
+            main { margin-left: 0; margin-top: 80px; padding: 20px; }
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Admin Pro</h2>
+        <a href="dashboard.html">🏠 Home</a>
+        <a href="admin-dashboard.html" class="active">🛠️ Control Panel</a>
+        <a href="leaves.html">📅 Leaves</a>
+        <a href="contribution.html">🏦 Contributions</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Admin Control Panel</h1>
+        <p class="subtitle">Direct access to organizational management modules.</p>
+
+        <div class="admin-grid">
+            <a href="payroll.html" class="control-card">
+                <div class="icon-circle bg-payroll">💰</div>
+                <h3>Process Payroll</h3>
+                <p>Run 2026 salary calculations and statutory deductions.</p>
+            </a>
+
+            <a href="employee.html" class="control-card">
+                <div class="icon-circle bg-employee">👥</div>
+                <h3>Staff Masterlist</h3>
+                <p>Manage employee profiles, basic salaries, and ID numbers.</p>
+            </a>
+
+            <a href="approval.html" class="control-card">
+                <div class="icon-circle bg-approval">⏳</div>
+                <h3>Approvals</h3>
+                <p>Verify leave requests and finalize payroll releases.</p>
+            </a>
+
+            <a href="payslip.html" class="control-card">
+                <div class="icon-circle bg-reports">📄</div>
+                <h3>Payroll Reports</h3>
+                <p>Access historical records and generated payslips.</p>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'YOUR_KEY'; // Replace with your key
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Security check removed to allow direct file access.
+
+        async function handleLogout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

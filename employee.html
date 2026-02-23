@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Employee Masterlist</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg: #58ccff; 
+            --sidebar-width: 240px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; min-height: 100vh; }
+
+        /* --- NAVIGATION --- */
+        nav { 
+            background: var(--dark); color: white; width: var(--sidebar-width); height: 100vh;
+            position: fixed; left: 0; top: 0; display: flex; flex-direction: column;
+            padding: 20px; box-sizing: border-box; z-index: 1000;
+        }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav a { display: flex; align-items: center; color: #d1d5db; text-decoration: none; padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; margin: 4px 0; }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
+
+        /* --- MAIN CONTENT --- */
+        main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; box-sizing: border-box; }
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); }
+
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
+
+        .section-title { grid-column: 1 / -1; font-size: 14px; color: var(--dark); border-bottom: 2px solid #f1f5f9; padding-bottom: 5px; margin-top: 15px; font-weight: bold; }
+
+        .btn-save { background: var(--dark); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; width: 100%; font-size: 1rem; }
+
+        /* --- TABLE --- */
+        .table-container { overflow-x: auto; background: white; border-radius: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f8fafc; text-align: left; padding: 15px; color: #64748b; font-size: 11px; border-bottom: 2px solid #edf2f7; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #1e293b; }
+        
+        /* Leave Badges */
+        .leave-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 4px; border: 1px solid transparent; }
+        .vl { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .sl { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .spl { background: #fef9c3; color: #854d0e; border-color: #fef08a; }
+
+        @media (max-width: 1024px) {
+            nav { width: 100%; height: auto; position: fixed; flex-direction: row; top:0; left:0; padding: 10px; overflow-x: auto; white-space: nowrap; gap: 10px; }
+            nav h2 { display: none; }
+            main { margin-left: 0; margin-top: 70px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Admin Panel</h2>
+        <a href="dashboard.html">🏠 Home</a>
+        <a href="admin-dashboard.html">🛠️ Control Panel</a>
+        <a href="employee.html" class="active">👥 Employees</a>
+        <a href="payroll.html">💰 Payout</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Employee Masterlist</h1>
+
+        <div class="card">
+            <h3 style="margin-top:0;">Register New Employee</h3>
+            <form id="employeeForm">
+                <div class="form-grid">
+                    <div class="section-title">Personal & Salary Info</div>
+                    <div class="input-group"><label>Employee ID</label><input type="text" id="idNum" placeholder="e.g. 2026-001" required></div>
+                    <div class="input-group"><label>Full Name</label><input type="text" id="fullName" placeholder="Juan Dela Cruz" required></div>
+                    <div class="input-group"><label>Email</label><input type="email" id="email" placeholder="juan@company.com" required></div>
+                    <div class="input-group"><label>Basic Salary</label><input type="number" id="monthlySalary" placeholder="25000" required></div>
+                    <div class="input-group"><label>Address</label><input type="text" id="address" placeholder="City, Province"></div>
+
+                    <div class="section-title">Statutory IDs</div>
+                    <div class="input-group"><label>SSS No.</label><input type="text" id="sss" placeholder="00-0000000-0"></div>
+                    <div class="input-group"><label>TIN No.</label><input type="text" id="tin" placeholder="000-000-000"></div>
+                    <div class="input-group"><label>PhilHealth No.</label><input type="text" id="philhealth" placeholder="00-000000000-0"></div>
+                    <div class="input-group"><label>Pag-IBIG No.</label><input type="text" id="pagibig" placeholder="0000-0000-0000"></div>
+
+                    <div class="section-title">Leave Allocation (Annual)</div>
+                    <div class="input-group"><label>Vacation Leave (VL)</label><input type="number" id="vl_total" value="15"></div>
+                    <div class="input-group"><label>Sick Leave (SL)</label><input type="number" id="sl_total" value="15"></div>
+                    <div class="input-group">
+                        <label>Solo Parent Leave (SPL)</label>
+                        <input type="number" id="spl_total" value="0" title="Grant 7 days for eligible solo parents">
+                    </div>
+                </div>
+                <button type="submit" class="btn-save" id="btnSave">Register Employee Profile</button>
+            </form>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID & Name</th>
+                            <th>Gov't IDs</th>
+                            <th>Leave Balances</th>
+                            <th>Salary</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadEmployees() {
+            const tbody = document.getElementById('employeeTableBody');
+            const { data, error } = await _supabase.from('employees').select('*').order('id_number', { ascending: true });
+
+            if (error) return;
+
+            tbody.innerHTML = data.map(emp => `
+                <tr>
+                    <td>
+                        <div style="font-weight: bold; color: var(--dark);">${emp.full_name}</div>
+                        <div style="font-size: 11px; color: #64748b;">ID: ${emp.id_number}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 10px;">SSS: ${emp.sss || '-'} | TIN: ${emp.tin || '-'}</div>
+                        <div style="font-size: 10px;">PH: ${emp.philhealth || '-'} | PI: ${emp.pagibig || '-'}</div>
+                    </td>
+                    <td>
+                        <span class="leave-badge vl" title="Vacation Leave">VL: ${emp.vl_balance ?? 0}</span>
+                        <span class="leave-badge sl" title="Sick Leave">SL: ${emp.sl_balance ?? 0}</span>
+                        <span class="leave-badge spl" title="Solo Parent Leave">SPL: ${emp.spl_balance ?? 0}</span>
+                    </td>
+                    <td>₱${parseFloat(emp.monthly_salary || 0).toLocaleString()}</td>
+                    <td>
+                        <button style="color:red; border:none; background:none; cursor:pointer; font-size:12px;" onclick="deleteEmployee('${emp.id_number}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('employeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSave');
+            btn.innerText = "Registering..."; btn.disabled = true;
+
+            const { error } = await _supabase.from('employees').insert([{
+                id_number: document.getElementById('idNum').value,
+                full_name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                monthly_salary: parseFloat(document.getElementById('monthlySalary').value),
+                tin: document.getElementById('tin').value,
+                sss: document.getElementById('sss').value,
+                philhealth: document.getElementById('philhealth').value,
+                pagibig: document.getElementById('pagibig').value,
+                vl_balance: parseInt(document.getElementById('vl_total').value),
+                sl_balance: parseInt(document.getElementById('sl_total').value),
+                spl_balance: parseInt(document.getElementById('spl_total').value)
+            }]);
+
+            if (error) { 
+                alert("Error: " + error.message); 
+                btn.disabled = false; 
+                btn.innerText = "Register Profile"; 
+            } else { 
+                alert("Employee Registered Successfully!"); 
+                location.reload(); 
+            }
+        });
+
+        async function deleteEmployee(idNum) {
+            if (confirm("Are you sure you want to delete this record?")) {
+                await _supabase.from('employees').delete().eq('id_number', idNum);
+                loadEmployees();
+            }
+        }
+
+        function handleLogout() { 
+            localStorage.clear(); 
+            window.location.href = 'index.html'; 
+        }
+        
+        loadEmployees();
+    </script>
+</body>
+</html>
