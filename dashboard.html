@@ -23,7 +23,7 @@
             color: #334155;
         }
         
-        /* --- NAVIGATION LOGIC --- */
+        /* --- NAVIGATION --- */
         nav { 
             background: var(--dark); 
             color: white; 
@@ -44,7 +44,7 @@
             }
             main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; }
             nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
-            .btn-logout { margin-top: auto; display: block; }
+            .btn-logout { margin-top: auto; display: block; width: 100%; }
         }
 
         @media (max-width: 850px) {
@@ -62,7 +62,7 @@
                 gap: 5px;
             }
             nav h2 { display: none; }
-            main { margin-top: 70px; padding: 15px; width: 100%; }
+            main { margin-top: 80px; padding: 15px; width: 100%; }
             .btn-logout { background: #ff4d4d; padding: 8px 12px; }
         }
 
@@ -94,7 +94,7 @@
         .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .profile-card, .info-card { background: var(--card-white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .profile-card { text-align: center; }
-        .profile-card img { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f1f5f9; margin-bottom: 10px; }
+        .profile-card img { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f1f5f9; margin-bottom: 10px; object-fit: cover; }
         .id-badge { display: inline-block; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; }
 
         .credit-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
@@ -103,8 +103,9 @@
         .mini-card div { font-size: 18px; font-weight: bold; color: var(--dark); }
 
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .info-item label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; }
-        .info-item span { font-size: 14px; color: #1e293b; font-weight: 500; }
+        .info-item { border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+        .info-item label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 2px; }
+        .info-item span { font-size: 14px; color: #1e293b; font-weight: 500; word-break: break-all; }
 
         @media (max-width: 600px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -121,8 +122,9 @@
         <a href="leaves.html">📅 Leaves</a>
         <a href="payslip.html">📄 Payslips</a>
         <a href="contribution.html">🏦 Contributions</a>
-        <a href="payroll.html" id="adminLink" style="display:none;">⚙️ Register</a>
+        <a href="payroll.html" id="adminLink" style="display:none;">💰 Payout</a>
         <a href="user.html">👤 Profile</a>
+        <a href="pass.html">🔑 Password</a>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </nav>
 
@@ -167,9 +169,22 @@
                         <label>Home Address</label>
                         <span id="resAddress">---</span>
                     </div>
+                    
                     <div class="info-item">
-                        <label>SSS / PhilHealth / TIN</label>
-                        <span id="govSummary">---</span>
+                        <label>SSS Number</label>
+                        <span id="resSSS">---</span>
+                    </div>
+                    <div class="info-item">
+                        <label>PhilHealth ID</label>
+                        <span id="resPH">---</span>
+                    </div>
+                    <div class="info-item">
+                        <label>TIN Number</label>
+                        <span id="resTIN">---</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Pag-IBIG Number</label>
+                        <span id="resPI">---</span>
                     </div>
                 </div>
             </div>
@@ -179,44 +194,70 @@
     <script>
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadProfile() {
-            const empID = localStorage.getItem('employeeID');
-            const role = localStorage.getItem('role');
+            let empID = localStorage.getItem('employeeID');
+            let role = localStorage.getItem('role');
 
-            // Admin-only view adjustments
+            // --- SECURITY GATE: FORCED PASSWORD CHANGE ---
+            // If they haven't changed the default password, redirect to pass.html
+            const hasChangedPassword = localStorage.getItem('passwordChanged');
+            if (!hasChangedPassword && empID && empID !== 'ADMIN-001') {
+                window.location.href = 'pass.html?reason=force';
+                return;
+            }
+
+            // STANDALONE PREVIEW MODE
+            if (!empID) {
+                console.log("Standalone Mode: Defaulting to Admin-001");
+                empID = 'ADMIN-001'; 
+                role = 'admin';
+            }
+
             if (role === 'admin') {
                 if(document.getElementById('adminLink')) document.getElementById('adminLink').style.display = 'flex';
                 if(document.getElementById('adminEmpLink')) document.getElementById('adminEmpLink').style.display = 'flex';
             }
 
-            const { data, error } = await supabase
+            const { data, error } = await _supabase
                 .from('employees')
                 .select('*')
                 .eq('id_number', empID)
                 .single();
+
+            if (error) {
+                console.error("Fetch Error:", error.message);
+                document.getElementById('dispFullName').innerText = "Record not found";
+                return;
+            }
 
             if (data) {
                 document.getElementById('welcomeText').innerText = `Hello, ${data.full_name.split(' ')[0]}!`;
                 document.getElementById('dispFullName').innerText = data.full_name;
                 document.getElementById('dispPosition').innerText = data.position;
                 document.getElementById('dispID').innerText = `ID: ${data.id_number}`;
-                document.getElementById('profileImg').src = `https://ui-avatars.com/api/?background=1e3a8a&color=fff&name=${encodeURIComponent(data.full_name)}`;
+                
+                document.getElementById('profileImg').src = `https://ui-avatars.com/api/?background=1e3a8a&color=fff&bold=true&name=${encodeURIComponent(data.full_name)}`;
 
                 document.getElementById('resSL').innerText = data.sl_credits || 0;
                 document.getElementById('resVL').innerText = data.vl_credits || 0;
                 document.getElementById('resSPL').innerText = data.spl_credits || 0;
 
-                document.getElementById('resEmail').innerText = data.email;
-                document.getElementById('resContact').innerText = data.contact_number;
-                document.getElementById('resAddress').innerText = data.address;
-                document.getElementById('govSummary').innerText = `${data.sss_no || 'N/A'} / ${data.philhealth_no || 'N/A'} / ${data.tin_no || 'N/A'}`;
+                document.getElementById('resEmail').innerText = data.email || 'N/A';
+                document.getElementById('resContact').innerText = data.contact_number || 'N/A';
+                document.getElementById('resAddress').innerText = data.address || 'N/A';
+
+                document.getElementById('resSSS').innerText = data.sss_no || 'N/A';
+                document.getElementById('resPH').innerText = data.philhealth_no || 'N/A';
+                document.getElementById('resTIN').innerText = data.tin_no || 'N/A';
+                document.getElementById('resPI').innerText = data.pagibig_no || 'N/A';
             }
         }
 
         async function handleLogout() {
-            await supabase.auth.signOut();
+            await _supabase.auth.signOut();
             localStorage.clear();
             window.location.href = 'index.html';
         }

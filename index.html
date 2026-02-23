@@ -28,7 +28,7 @@
             padding: 2.5rem; 
             border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-            width: 100%;
+            width: 90%;
             max-width: 340px; 
             text-align: center;
         }
@@ -58,7 +58,10 @@
             cursor: pointer; 
             font-weight: bold; 
             margin-top: 10px;
+            transition: opacity 0.2s;
         }
+        
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .error { color: #ff4d4d; font-size: 0.85rem; margin-top: 15px; min-height: 1.2rem; }
     </style>
@@ -80,70 +83,83 @@
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
 
-            <button type="submit">Sign In</button>
+            <button type="submit" id="submitBtn">Sign In</button>
         </form>
 
         <p id="message" class="error"></p>
     </div>
 
     <script>
+        // Use a project-specific variable name to avoid conflicts with the library global 'supabase'
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = document.getElementById('message');
+            const submitBtn = document.getElementById('submitBtn');
             const usernameInput = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
+            // Feedback for the user
             message.textContent = "Authenticating...";
             message.style.color = "gray";
+            submitBtn.disabled = true;
 
             let targetEmail = "";
             let isAdmin = false;
 
-            // 1. DETERMINE THE TARGET EMAIL
-            if (usernameInput.toLowerCase() === 'admin') {
-                targetEmail = 'admin@payroll.portal'; 
-                isAdmin = true;
-            } else {
-                const { data: employee, error: searchError } = await supabase
-                    .from('employees')
-                    .select('email, id_number')
-                    .eq('id_number', usernameInput)
-                    .single();
-
-                if (searchError || !employee) {
-                    message.textContent = "Username (ID Number) not found.";
-                    message.style.color = "#ff4d4d";
-                    return;
-                }
-                targetEmail = employee.email;
-            }
-
-            // 2. SIGN IN WITH SUPABASE AUTH
-            const { data, error: authError } = await supabase.auth.signInWithPassword({
-                email: targetEmail,
-                password: password,
-            });
-
-            if (authError) {
-                message.textContent = "Invalid password.";
-                message.style.color = "#ff4d4d";
-            } else {
-                // 3. STORE SESSION INFO AND REDIRECT
-                localStorage.setItem('employeeID', usernameInput);
-                
-                if (isAdmin) {
-                    localStorage.setItem('role', 'admin');
-                    // Changed from setting.html to payroll.html
-                    window.location.href = 'payroll.html';
+            try {
+                // 1. DETERMINE THE TARGET EMAIL
+                if (usernameInput.toLowerCase() === 'admin') {
+                    targetEmail = 'admin@payroll.portal'; 
+                    isAdmin = true;
                 } else {
-                    localStorage.setItem('role', 'user');
-                    // Changed from payroll.html to dashboard.html
-                    window.location.href = 'dashboard.html';
+                    // Check database for ID Number to find linked email
+                    const { data: employee, error: searchError } = await _supabase
+                        .from('employees')
+                        .select('email, id_number')
+                        .eq('id_number', usernameInput)
+                        .single();
+
+                    if (searchError || !employee) {
+                        message.textContent = "ID Number not found.";
+                        message.style.color = "#ff4d4d";
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                    targetEmail = employee.email;
                 }
+
+                // 2. SIGN IN WITH SUPABASE AUTH
+                const { data, error: authError } = await _supabase.auth.signInWithPassword({
+                    email: targetEmail,
+                    password: password,
+                });
+
+                if (authError) {
+                    message.textContent = "Invalid password.";
+                    message.style.color = "#ff4d4d";
+                    submitBtn.disabled = false;
+                } else {
+                    // 3. STORE SESSION INFO AND REDIRECT
+                    localStorage.setItem('employeeID', usernameInput);
+                    
+                    if (isAdmin) {
+                        localStorage.setItem('role', 'admin');
+                        window.location.href = 'payroll.html';
+                    } else {
+                        localStorage.setItem('role', 'user');
+                        window.location.href = 'dashboard.html';
+                    }
+                }
+            } catch (err) {
+                console.error("Critical Error:", err);
+                message.textContent = "Connection error. Please try again.";
+                message.style.color = "#ff4d4d";
+                submitBtn.disabled = false;
             }
         });
     </script>
