@@ -24,27 +24,59 @@
         }
         
         /* --- NAVIGATION --- */
-        nav { background: var(--dark); color: white; display: flex; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-
-        @media (min-width: 851px) {
-            nav { width: var(--sidebar-width); height: 100vh; position: fixed; left: 0; top: 0; flex-direction: column; padding: 20px; }
-            main { margin-left: var(--sidebar-width); padding: 30px; width: calc(100% - var(--sidebar-width)); }
-            nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav { 
+            background: var(--dark); 
+            color: white; 
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        @media (max-width: 850px) {
-            nav { width: 100%; height: auto; position: fixed; top: 0; left: 0; flex-direction: row; padding: 10px 5px; overflow-x: auto; white-space: nowrap; gap: 5px; }
-            nav h2 { display: none; }
-            main { margin-top: 70px; padding: 15px; width: 100%; }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        nav a { 
+            display: flex; 
+            align-items: center; 
+            color: #d1d5db; 
+            text-decoration: none; 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+            font-size: 14px;
+            margin: 4px 0;
         }
-
-        nav a { display: flex; align-items: center; color: #d1d5db; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; }
         nav a:hover { background: rgba(255,255,255,0.1); color: white; }
         nav a.active { background: var(--primary); color: white; font-weight: 600; }
-        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
 
-        /* --- DASHBOARD & LAYOUT --- */
+        .btn-logout { 
+            background: #ff4d4d; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: auto;
+        }
+
+        /* --- MAIN CONTENT --- */
+        main { 
+            margin-left: var(--sidebar-width); 
+            padding: 30px; 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
         h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
+        
         .credits-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .credit-card { background: var(--card-white); padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
         .credit-card h4 { margin: 0; color: #64748b; font-size: 11px; text-transform: uppercase; }
@@ -55,7 +87,8 @@
         
         .form-group { margin-bottom: 12px; }
         label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
+        
         .btn-submit { background: var(--dark); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
 
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -67,12 +100,23 @@
         .approved { background: #dcfce7; color: #166534; }
         .rejected { background: #fee2e2; color: #991b1b; }
 
-        .admin-actions button { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; color: white; margin-right: 3px; }
-        .btn-approve { background: #3ecf8e; }
-        .btn-reject { background: #ff4d4d; }
+        .btn-approve { background: #3ecf8e; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-reject { background: #ff4d4d; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
 
+        /* --- MOBILE LAYOUT --- */
         @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            nav {
+                width: 100%; height: auto; position: fixed; top: 0; left: 0;
+                flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap;
+                justify-content: flex-start; gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1);
+            }
+            nav h2 { display: none; }
+            nav a { margin: 0; padding: 10px 15px; font-size: 13px; }
+            .btn-logout { margin-top: 0; padding: 10px 15px; }
+            main { margin-left: 0; margin-top: 70px; padding: 20px; }
             .layout-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5rem; text-align: center; }
         }
     </style>
 </head>
@@ -80,12 +124,14 @@
 
     <nav>
         <h2>Payroll Pro</h2>
-        <a href="payroll.html">🏠 Home</a>
+        <a href="dashboard.html">🏠 Home</a>
         <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
         <a href="leaves.html" class="active">📅 Leaves</a>
         <a href="payslip.html">📄 Payslips</a>
         <a href="contribution.html">🏦 Contributions</a>
-        <a href="setting.html" id="adminSetLink" style="display:none;">⚙️ Register</a>
+        <a href="payroll.html" id="adminLink" style="display:none;">💰 Payout</a>
+        <a href="user.html">👤 Profile</a>
+        <a href="pass.html">🔑 Password</a>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </nav>
 
@@ -115,8 +161,8 @@
                     <div class="form-group">
                         <label>Dates</label>
                         <div style="display: flex; gap: 5px;">
-                            <input type="date" id="startDate" required title="Start Date">
-                            <input type="date" id="endDate" required title="End Date">
+                            <input type="date" id="startDate" required>
+                            <input type="date" id="endDate" required>
                         </div>
                     </div>
                     <div class="form-group"><label>Reason</label><textarea id="reason" rows="2" required></textarea></div>
@@ -147,18 +193,21 @@
     <script>
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const role = localStorage.getItem('role');
         const empID = localStorage.getItem('employeeID');
 
-        async function init() {
+        async function initPage() {
             if (role === 'admin') {
-                document.getElementById('adminEmpLink').style.display = 'flex';
-                document.getElementById('adminSetLink').style.display = 'flex';
+                const adminL = document.getElementById('adminLink');
+                const adminEL = document.getElementById('adminEmpLink');
+                if(adminL) adminL.style.display = 'flex';
+                if(adminEL) adminEL.style.display = 'flex';
+                
                 document.getElementById('adminColName').style.display = 'table-cell';
                 document.getElementById('adminColAction').style.display = 'table-cell';
-                document.getElementById('tableTitle').innerText = "All Requests";
+                document.getElementById('tableTitle').innerText = "All Employee Requests";
                 document.getElementById('creditsDashboard').style.display = 'none';
                 document.getElementById('applicationFormCard').style.display = 'none';
                 loadAllLeaves();
@@ -169,7 +218,7 @@
         }
 
         async function loadMyCredits() {
-            const { data } = await supabase.from('employees').select('sl_credits, vl_credits, spl_credits').eq('id_number', empID).single();
+            const { data } = await _supabase.from('employees').select('sl_credits, vl_credits, spl_credits').eq('id_number', empID).single();
             if (data) {
                 document.getElementById('slCount').innerText = data.sl_credits || "0.00";
                 document.getElementById('vlCount').innerText = data.vl_credits || "0.00";
@@ -179,7 +228,7 @@
 
         document.getElementById('leaveForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { error } = await supabase.from('leaves').insert([{
+            const { error } = await _supabase.from('leaves').insert([{
                 employee_id: empID,
                 leave_type: document.getElementById('leaveType').value,
                 start_date: document.getElementById('startDate').value,
@@ -187,21 +236,22 @@
                 reason: document.getElementById('reason').value,
                 status: 'pending'
             }]);
-            if (error) alert(error.message); else { alert("Submitted!"); location.reload(); }
+            if (error) alert(error.message); else { alert("Leave application submitted!"); location.reload(); }
         });
 
         async function loadMyLeaves() {
-            const { data } = await supabase.from('leaves').select('*').eq('employee_id', empID).order('created_at', { ascending: false });
+            const { data } = await _supabase.from('leaves').select('*').eq('employee_id', empID).order('created_at', { ascending: false });
             renderTable(data);
         }
 
         async function loadAllLeaves() {
-            const { data } = await supabase.from('leaves').select('*, employees(full_name)').order('created_at', { ascending: false });
+            const { data } = await _supabase.from('leaves').select('*, employees(full_name)').order('created_at', { ascending: false });
             renderTable(data);
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('leaveTableBody');
+            if (!data) return;
             tbody.innerHTML = data.map(row => `
                 <tr>
                     <td style="display:${role === 'admin' ? 'table-cell' : 'none'}"><strong>${row.employees?.full_name || '...'}</strong></td>
@@ -220,37 +270,33 @@
 
         async function updateStatus(id, newStatus) {
             if (newStatus === 'approved') {
-                const { data: leaveReq } = await supabase.from('leaves').select('*').eq('id', id).single();
-                const typeMap = { 
-                    'Sick Leave': 'sl_credits', 
-                    'Vacation Leave': 'vl_credits', 
-                    'Solo Parent Leave': 'spl_credits' 
-                };
+                const { data: leaveReq } = await _supabase.from('leaves').select('*').eq('id', id).single();
+                const typeMap = { 'Sick Leave': 'sl_credits', 'Vacation Leave': 'vl_credits', 'Solo Parent Leave': 'spl_credits' };
                 const col = typeMap[leaveReq.leave_type];
 
                 if (col) {
-                    // Calculate days inclusive
                     const start = new Date(leaveReq.start_date);
                     const end = new Date(leaveReq.end_date);
                     const days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-                    // Get employee's current credit balance
-                    const { data: emp } = await supabase.from('employees').select(col).eq('id_number', leaveReq.employee_id).single();
-                    
+                    const { data: emp } = await _supabase.from('employees').select(col).eq('id_number', leaveReq.employee_id).single();
                     if (emp) {
-                        const newBalance = (emp[col] || 0) - days;
-                        // Update the employee table with new balance
-                        await supabase.from('employees').update({ [col]: newBalance }).eq('id_number', leaveReq.employee_id);
+                        const newBalance = (parseFloat(emp[col]) || 0) - days;
+                        await _supabase.from('employees').update({ [col]: newBalance }).eq('id_number', leaveReq.employee_id);
                     }
                 }
             }
-            // Update the leave request status in the leaves table
-            await supabase.from('leaves').update({ status: newStatus }).eq('id', id);
+            await _supabase.from('leaves').update({ status: newStatus }).eq('id', id);
             location.reload();
         }
 
-        function handleLogout() { localStorage.clear(); window.location.href = 'index.html'; }
-        init();
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        initPage();
     </script>
 </body>
 </html>

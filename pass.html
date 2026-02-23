@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Settings | Payroll Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; --dark: #1e3a8a; --bg-blue: #58ccff; --card-white: #ffffff; --sidebar-width: 240px;
+            --danger: #ff4d4d;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-blue); margin: 0; display: flex; min-height: 100vh; }
+        
+        /* --- NAVIGATION --- */
+        nav { 
+            width: var(--sidebar-width); background: var(--dark); height: 100vh; color: white; padding: 20px; 
+            position: fixed; display: flex; flex-direction: column; box-sizing: border-box; z-index: 1000;
+        }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav a { display: block; color: #d1d5db; text-decoration: none; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; transition: 0.3s; }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+        .btn-logout { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 5px; margin-top: auto; cursor: pointer; font-weight: bold; }
+
+        /* --- MAIN CONTENT --- */
+        main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; box-sizing: border-box; }
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
+        
+        .card { background: var(--card-white); padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; position: relative; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); font-size: 14px; }
+        
+        input { padding: 12px; padding-right: 40px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; background: #f8fafc; transition: 0.2s; }
+        input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        
+        /* Matching States */
+        input.match-success { border-color: var(--primary) !important; background: #f0fff4; }
+        input.match-error { border-color: var(--danger) !important; background: #fff5f5; }
+
+        .toggle-pass { position: absolute; right: 12px; top: 38px; cursor: pointer; color: #94a3b8; font-size: 18px; user-select: none; }
+        .btn-save { background: var(--primary); color: white; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; transition: 0.3s; }
+        .btn-save:hover { background: #34b37b; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
+
+        #statusMsg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; }
+        .alert-box { display: none; background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffeeba; font-size: 14px; }
+
+        /* --- MOBILE LAYOUT --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            nav { 
+                width: 100%; height: auto; position: fixed; top: 0; left: 0;
+                flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap;
+                gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1);
+            }
+            nav h2 { display: none; }
+            nav a { margin: 0; padding: 10px 15px; display: inline-block; font-size: 13px; }
+            .btn-logout { margin-top: 0; padding: 10px 15px; }
+            main { margin-left: 0; margin-top: 70px; padding: 20px; }
+            h1 { font-size: 1.5rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>Payroll Pro</h2>
+        <a href="dashboard.html">🏠 Home</a>
+        <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
+        <a href="leaves.html">📅 Leaves</a>
+        <a href="payslip.html">📄 Payslips</a>
+        <a href="user.html">👤 Profile</a>
+        <a href="pass.html" class="active">🔑 Password</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Security Settings</h1>
+        
+        <div class="card">
+            <div id="forceWarning" class="alert-box">
+                <strong>Action Required:</strong> You are using a default password. Please update your security credentials to access the dashboard.
+            </div>
+
+            <h3 style="margin-top: 0; color: var(--dark);">Update Password</h3>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">Ensure your new password is at least 6 characters long.</p>
+            
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="Minimum 6 characters" required>
+                    <span class="toggle-pass" onclick="toggleVisibility('newPassword')">👁️</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Repeat new password" required disabled>
+                    <span class="toggle-pass" onclick="toggleVisibility('confirmPassword')">👁️</span>
+                </div>
+                
+                <button type="submit" id="saveBtn" class="btn-save" disabled>Save New Password</button>
+            </form>
+            <p id="statusMsg"></p>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const newPassInput = document.getElementById('newPassword');
+        const confirmPassInput = document.getElementById('confirmPassword');
+        const saveBtn = document.getElementById('saveBtn');
+
+        // Real-time Matching Logic
+        function validateMatch() {
+            const p1 = newPassInput.value;
+            const p2 = confirmPassInput.value;
+
+            if (p2.length === 0) {
+                confirmPassInput.classList.remove('match-success', 'match-error');
+                saveBtn.disabled = true;
+                return;
+            }
+
+            if (p1 === p2 && p1.length >= 6) {
+                confirmPassInput.classList.add('match-success');
+                confirmPassInput.classList.remove('match-error');
+                saveBtn.disabled = false;
+            } else {
+                confirmPassInput.classList.add('match-error');
+                confirmPassInput.classList.remove('match-success');
+                saveBtn.disabled = true;
+            }
+        }
+
+        newPassInput.addEventListener('input', () => {
+            confirmPassInput.disabled = newPassInput.value.length < 6;
+            validateMatch();
+        });
+        confirmPassInput.addEventListener('input', validateMatch);
+
+        function toggleVisibility(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
+        }
+
+        async function initPage() {
+            const role = localStorage.getItem('role');
+            if (role === 'admin' && document.getElementById('adminEmpLink')) {
+                document.getElementById('adminEmpLink').style.display = 'inline-block';
+            }
+
+            const isForced = new URLSearchParams(window.location.search).get('reason') === 'force';
+            if (isForced) {
+                document.getElementById('forceWarning').style.display = 'block';
+                document.querySelectorAll('nav a').forEach(l => {
+                    if(!l.classList.contains('active')) {
+                        l.style.opacity = "0.5";
+                        l.style.pointerEvents = "none";
+                    }
+                });
+            }
+        }
+
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            saveBtn.disabled = true;
+            const msg = document.getElementById('statusMsg');
+            msg.innerText = "Updating...";
+            msg.style.color = "gray";
+
+            const { error } = await _supabase.auth.updateUser({ password: newPassInput.value });
+
+            if (error) {
+                msg.innerText = "Error: " + error.message;
+                msg.style.color = "red";
+                saveBtn.disabled = false;
+            } else {
+                localStorage.setItem('passwordChanged', 'true');
+                msg.innerText = "✅ Success! Redirecting...";
+                msg.style.color = "#3ecf8e";
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+            }
+        });
+
+        function handleLogout() { 
+            _supabase.auth.signOut();
+            localStorage.clear(); 
+            window.location.href = 'index.html'; 
+        }
+        initPage();
+    </script>
+</body>
+</html>

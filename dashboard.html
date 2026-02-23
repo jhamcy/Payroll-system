@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard | Payroll Pro</title>
+    <title>Leave Management | Payroll Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -23,58 +23,35 @@
             color: #334155;
         }
         
-        /* --- NAVIGATION --- */
+        /* --- NAVIGATION (Synced with Dashboard) --- */
         nav { 
             background: var(--dark); 
             color: white; 
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
             display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
             z-index: 1000;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        @media (min-width: 851px) {
-            nav {
-                width: var(--sidebar-width);
-                height: 100vh;
-                position: fixed;
-                left: 0;
-                top: 0;
-                flex-direction: column;
-                padding: 20px;
-            }
-            main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; }
-            nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
-            .btn-logout { margin-top: auto; display: block; width: 100%; }
-        }
-
-        @media (max-width: 850px) {
-            nav {
-                width: 100%;
-                height: auto;
-                position: fixed;
-                top: 0;
-                left: 0;
-                flex-direction: row;
-                padding: 10px 5px;
-                overflow-x: auto;
-                white-space: nowrap;
-                justify-content: flex-start;
-                gap: 5px;
-            }
-            nav h2 { display: none; }
-            main { margin-top: 80px; padding: 15px; width: 100%; }
-            .btn-logout { background: #ff4d4d; padding: 8px 12px; }
-        }
-
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        
         nav a { 
             display: flex; 
             align-items: center; 
             color: #d1d5db; 
             text-decoration: none; 
-            padding: 10px 15px; 
+            padding: 12px 15px; 
             border-radius: 8px; 
             transition: 0.3s; 
-            font-size: 14px; 
+            font-size: 14px;
+            margin: 4px 0;
         }
         nav a:hover { background: rgba(255,255,255,0.1); color: white; }
         nav a.active { background: var(--primary); color: white; font-weight: 600; }
@@ -87,29 +64,59 @@
             border-radius: 8px; 
             cursor: pointer; 
             font-weight: bold; 
+            margin-top: auto;
         }
 
-        /* --- DASHBOARD STYLES --- */
+        /* --- MAIN CONTENT --- */
+        main { 
+            margin-left: var(--sidebar-width); 
+            padding: 30px; 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
         h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
-        .profile-card, .info-card { background: var(--card-white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .profile-card { text-align: center; }
-        .profile-card img { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f1f5f9; margin-bottom: 10px; object-fit: cover; }
-        .id-badge { display: inline-block; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; }
+        
+        .credits-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .credit-card { background: var(--card-white); padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .credit-card h4 { margin: 0; color: #64748b; font-size: 11px; text-transform: uppercase; }
+        .credit-card .count { font-size: 22px; font-weight: bold; color: var(--dark); margin: 5px 0; }
 
-        .credit-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .mini-card { background: #f8fafc; padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid var(--primary); }
-        .mini-card small { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; }
-        .mini-card div { font-size: 18px; font-weight: bold; color: var(--dark); }
+        .layout-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: var(--card-white); padding: 20px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
+        
+        .btn-submit { background: var(--dark); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
 
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .info-item { border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
-        .info-item label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 2px; }
-        .info-item span { font-size: 14px; color: #1e293b; font-weight: 500; word-break: break-all; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; background: #f8fafc; color: #64748b; padding: 12px; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        
+        .status-badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .pending { background: #fef3c7; color: #92400e; }
+        .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; }
 
-        @media (max-width: 600px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-            .info-grid { grid-template-columns: 1fr; }
+        .btn-approve { background: #3ecf8e; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-reject { background: #ff4d4d; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+
+        /* --- MOBILE LAYOUT --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            nav {
+                width: 100%; height: auto; position: fixed; top: 0; left: 0;
+                flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap;
+                justify-content: flex-start; gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1);
+            }
+            nav h2 { display: none; }
+            nav a { margin: 0; padding: 10px 15px; font-size: 13px; }
+            .btn-logout { margin-top: 0; padding: 10px 15px; }
+            main { margin-left: 0; margin-top: 70px; padding: 20px; }
+            .layout-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5rem; text-align: center; }
         }
     </style>
 </head>
@@ -117,9 +124,9 @@
 
     <nav>
         <h2>Payroll Pro</h2>
-        <a href="dashboard.html" class="active">🏠 Home</a>
+        <a href="dashboard.html">🏠 Home</a>
         <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
-        <a href="leaves.html">📅 Leaves</a>
+        <a href="leaves.html" class="active">📅 Leaves</a>
         <a href="payslip.html">📄 Payslips</a>
         <a href="contribution.html">🏦 Contributions</a>
         <a href="payroll.html" id="adminLink" style="display:none;">💰 Payout</a>
@@ -129,63 +136,55 @@
     </nav>
 
     <main>
-        <h1 id="welcomeText">Welcome!</h1>
+        <h1>Leave Management</h1>
 
-        <div class="dashboard-grid">
-            <div class="profile-card">
-                <img src="https://ui-avatars.com/api/?background=1e3a8a&color=fff&name=User" id="profileImg" alt="Avatar">
-                <h2 id="dispFullName" style="margin:5px 0;">Loading...</h2>
-                <p id="dispPosition" style="margin:0; color:#64748b;">---</p>
-                <div class="id-badge" id="dispID">ID: ---</div>
-                
-                <div class="credit-summary">
-                    <div class="mini-card">
-                        <small>Sick</small>
-                        <div id="resSL">0</div>
+        <div class="credits-container" id="creditsDashboard">
+            <div class="credit-card"><h4>Sick Leave</h4><div class="count" id="slCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #58ccff;"><h4>Vacation Leave</h4><div class="count" id="vlCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #a855f7;"><h4>Solo Parent</h4><div class="count" id="splCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #ff4d4d;"><h4>LWOP</h4><div class="count" id="lwopCount">0</div></div>
+        </div>
+        
+        <div class="layout-grid">
+            <div class="card" id="applicationFormCard">
+                <h3 style="margin-top:0">Submit Request</h3>
+                <form id="leaveForm">
+                    <div class="form-group">
+                        <label>Type of Leave</label>
+                        <select id="leaveType" required>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Vacation Leave">Vacation Leave</option>
+                            <option value="Solo Parent Leave">Solo Parent Leave</option>
+                            <option value="Authorized Leave w/out Pay">LWOP (No Pay)</option>
+                        </select>
                     </div>
-                    <div class="mini-card" style="border-bottom-color: #58ccff;">
-                        <small>Vacation</small>
-                        <div id="resVL">0</div>
+                    <div class="form-group">
+                        <label>Dates</label>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="date" id="startDate" required>
+                            <input type="date" id="endDate" required>
+                        </div>
                     </div>
-                    <div class="mini-card" style="border-bottom-color: #a855f7;">
-                        <small>Solo</small>
-                        <div id="resSPL">0</div>
-                    </div>
-                </div>
+                    <div class="form-group"><label>Reason</label><textarea id="reason" rows="2" required></textarea></div>
+                    <button type="submit" class="btn-submit">Submit Application</button>
+                </form>
             </div>
 
-            <div class="info-card">
-                <h3 style="margin-top:0; color: var(--dark); border-bottom: 1px solid #eee; padding-bottom:10px;">Personal Record</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <label>Email Address</label>
-                        <span id="resEmail">---</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Contact Number</label>
-                        <span id="resContact">---</span>
-                    </div>
-                    <div class="info-item" style="grid-column: span 2;">
-                        <label>Home Address</label>
-                        <span id="resAddress">---</span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <label>SSS Number</label>
-                        <span id="resSSS">---</span>
-                    </div>
-                    <div class="info-item">
-                        <label>PhilHealth ID</label>
-                        <span id="resPH">---</span>
-                    </div>
-                    <div class="info-item">
-                        <label>TIN Number</label>
-                        <span id="resTIN">---</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Pag-IBIG Number</label>
-                        <span id="resPI">---</span>
-                    </div>
+            <div class="card">
+                <h3 style="margin-top:0" id="tableTitle">My History</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th id="adminColName" style="display:none;">Employee</th>
+                                <th>Leave Type</th>
+                                <th>Dates</th>
+                                <th>Status</th>
+                                <th id="adminColAction" style="display:none;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -194,66 +193,102 @@
     <script>
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function loadProfile() {
-            let empID = localStorage.getItem('employeeID');
-            let role = localStorage.getItem('role');
+        const role = localStorage.getItem('role');
+        const empID = localStorage.getItem('employeeID');
 
-            // --- SECURITY GATE: FORCED PASSWORD CHANGE ---
-            // If they haven't changed the default password, redirect to pass.html
-            const hasChangedPassword = localStorage.getItem('passwordChanged');
-            if (!hasChangedPassword && empID && empID !== 'ADMIN-001') {
-                window.location.href = 'pass.html?reason=force';
-                return;
-            }
-
-            // STANDALONE PREVIEW MODE
-            if (!empID) {
-                console.log("Standalone Mode: Defaulting to Admin-001");
-                empID = 'ADMIN-001'; 
-                role = 'admin';
-            }
-
+        async function initPage() {
+            // Navbar Admin Logic
             if (role === 'admin') {
-                if(document.getElementById('adminLink')) document.getElementById('adminLink').style.display = 'flex';
-                if(document.getElementById('adminEmpLink')) document.getElementById('adminEmpLink').style.display = 'flex';
-            }
-
-            const { data, error } = await _supabase
-                .from('employees')
-                .select('*')
-                .eq('id_number', empID)
-                .single();
-
-            if (error) {
-                console.error("Fetch Error:", error.message);
-                document.getElementById('dispFullName').innerText = "Record not found";
-                return;
-            }
-
-            if (data) {
-                document.getElementById('welcomeText').innerText = `Hello, ${data.full_name.split(' ')[0]}!`;
-                document.getElementById('dispFullName').innerText = data.full_name;
-                document.getElementById('dispPosition').innerText = data.position;
-                document.getElementById('dispID').innerText = `ID: ${data.id_number}`;
+                const adminL = document.getElementById('adminLink');
+                const adminEL = document.getElementById('adminEmpLink');
+                if(adminL) adminL.style.display = 'flex';
+                if(adminEL) adminEL.style.display = 'flex';
                 
-                document.getElementById('profileImg').src = `https://ui-avatars.com/api/?background=1e3a8a&color=fff&bold=true&name=${encodeURIComponent(data.full_name)}`;
-
-                document.getElementById('resSL').innerText = data.sl_credits || 0;
-                document.getElementById('resVL').innerText = data.vl_credits || 0;
-                document.getElementById('resSPL').innerText = data.spl_credits || 0;
-
-                document.getElementById('resEmail').innerText = data.email || 'N/A';
-                document.getElementById('resContact').innerText = data.contact_number || 'N/A';
-                document.getElementById('resAddress').innerText = data.address || 'N/A';
-
-                document.getElementById('resSSS').innerText = data.sss_no || 'N/A';
-                document.getElementById('resPH').innerText = data.philhealth_no || 'N/A';
-                document.getElementById('resTIN').innerText = data.tin_no || 'N/A';
-                document.getElementById('resPI').innerText = data.pagibig_no || 'N/A';
+                // Table Admin Logic
+                document.getElementById('adminColName').style.display = 'table-cell';
+                document.getElementById('adminColAction').style.display = 'table-cell';
+                document.getElementById('tableTitle').innerText = "All Employee Requests";
+                document.getElementById('creditsDashboard').style.display = 'none';
+                document.getElementById('applicationFormCard').style.display = 'none';
+                loadAllLeaves();
+            } else {
+                loadMyLeaves();
+                loadMyCredits();
             }
+        }
+
+        async function loadMyCredits() {
+            const { data } = await _supabase.from('employees').select('sl_credits, vl_credits, spl_credits').eq('id_number', empID).single();
+            if (data) {
+                document.getElementById('slCount').innerText = data.sl_credits || "0.00";
+                document.getElementById('vlCount').innerText = data.vl_credits || "0.00";
+                document.getElementById('splCount').innerText = data.spl_credits || "0.00";
+            }
+        }
+
+        document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await _supabase.from('leaves').insert([{
+                employee_id: empID,
+                leave_type: document.getElementById('leaveType').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                reason: document.getElementById('reason').value,
+                status: 'pending'
+            }]);
+            if (error) alert(error.message); else { alert("Leave application submitted!"); location.reload(); }
+        });
+
+        async function loadMyLeaves() {
+            const { data } = await _supabase.from('leaves').select('*').eq('employee_id', empID).order('created_at', { ascending: false });
+            renderTable(data);
+        }
+
+        async function loadAllLeaves() {
+            const { data } = await _supabase.from('leaves').select('*, employees(full_name)').order('created_at', { ascending: false });
+            renderTable(data);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('leaveTableBody');
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td style="display:${role === 'admin' ? 'table-cell' : 'none'}"><strong>${row.employees?.full_name || '...'}</strong></td>
+                    <td>${row.leave_type}</td>
+                    <td>${row.start_date} to ${row.end_date}</td>
+                    <td><span class="status-badge ${row.status}">${row.status}</span></td>
+                    <td style="display:${role === 'admin' ? 'table-cell' : 'none'}">
+                        ${row.status === 'pending' ? `
+                            <button class="btn-approve" onclick="updateStatus('${row.id}', 'approved')">✔</button>
+                            <button class="btn-reject" onclick="updateStatus('${row.id}', 'rejected')">✖</button>
+                        ` : '--'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateStatus(id, newStatus) {
+            if (newStatus === 'approved') {
+                const { data: leaveReq } = await _supabase.from('leaves').select('*').eq('id', id).single();
+                const typeMap = { 'Sick Leave': 'sl_credits', 'Vacation Leave': 'vl_credits', 'Solo Parent Leave': 'spl_credits' };
+                const col = typeMap[leaveReq.leave_type];
+
+                if (col) {
+                    const start = new Date(leaveReq.start_date);
+                    const end = new Date(leaveReq.end_date);
+                    const days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+                    const { data: emp } = await _supabase.from('employees').select(col).eq('id_number', leaveReq.employee_id).single();
+                    if (emp) {
+                        const newBalance = (emp[col] || 0) - days;
+                        await _supabase.from('employees').update({ [col]: newBalance }).eq('id_number', leaveReq.employee_id);
+                    }
+                }
+            }
+            await _supabase.from('leaves').update({ status: newStatus }).eq('id', id);
+            location.reload();
         }
 
         async function handleLogout() {
@@ -262,7 +297,7 @@
             window.location.href = 'index.html';
         }
 
-        loadProfile();
+        initPage();
     </script>
 </body>
 </html>

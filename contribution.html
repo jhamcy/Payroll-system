@@ -24,26 +24,28 @@
         }
         
         /* --- NAVIGATION --- */
-        nav { background: var(--dark); color: white; display: flex; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-
-        @media (min-width: 851px) {
-            nav { width: var(--sidebar-width); height: 100vh; position: fixed; left: 0; top: 0; flex-direction: column; padding: 20px; }
-            main { margin-left: var(--sidebar-width); padding: 30px; width: calc(100% - var(--sidebar-width)); }
-            nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav { 
+            background: var(--dark); color: white; width: var(--sidebar-width); height: 100vh;
+            position: fixed; left: 0; top: 0; display: flex; flex-direction: column;
+            padding: 20px; box-sizing: border-box; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        @media (max-width: 850px) {
-            nav { width: 100%; height: auto; position: fixed; top: 0; left: 0; flex-direction: row; padding: 10px 5px; overflow-x: auto; white-space: nowrap; gap: 5px; }
-            nav h2 { display: none; }
-            main { margin-top: 70px; padding: 15px; width: 100%; }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        nav a { 
+            display: flex; align-items: center; color: #d1d5db; text-decoration: none; 
+            padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; margin: 4px 0;
         }
-
-        nav a { display: flex; align-items: center; color: #d1d5db; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; }
         nav a:hover { background: rgba(255,255,255,0.1); color: white; }
         nav a.active { background: var(--primary); color: white; font-weight: 600; }
-        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
+
+        .btn-logout { 
+            background: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; margin-top: auto;
+        }
 
         /* --- CONTENT --- */
+        main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; box-sizing: border-box; }
         h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
         
         .contribution-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
@@ -55,29 +57,41 @@
         .stat-label { font-size: 13px; color: #64748b; font-weight: 600; }
         .stat-value { font-size: 14px; color: var(--dark); font-weight: bold; }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
-        input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
-        .btn-save { background: var(--dark); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-        .table-card { margin-top: 25px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { text-align: left; background: #f8fafc; color: #64748b; padding: 12px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
 
         .badge { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+
+        /* --- MOBILE --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            nav {
+                width: 100%; height: auto; position: fixed; top: 0; left: 0;
+                flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap;
+                justify-content: flex-start; gap: 10px; border-bottom: 2px solid rgba(0,0,0,0.1);
+            }
+            nav h2 { display: none; }
+            nav a { margin: 0; padding: 10px 15px; font-size: 13px; }
+            .btn-logout { margin-top: 0; padding: 10px 15px; }
+            main { margin-left: 0; margin-top: 70px; padding: 20px; }
+            .contribution-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5rem; text-align: center; }
+        }
     </style>
 </head>
 <body>
 
     <nav>
         <h2>Payroll Pro</h2>
-        <a href="payroll.html">🏠 Home</a>
+        <a href="dashboard.html">🏠 Home</a>
         <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
         <a href="leaves.html">📅 Leaves</a>
         <a href="payslip.html">📄 Payslips</a>
         <a href="contribution.html" class="active">🏦 Contributions</a>
-        <a href="setting.html" id="adminSetLink" style="display:none;">⚙️ Register</a>
+        <a href="payroll.html" id="adminLink" style="display:none;">💰 Payout</a>
+        <a href="user.html">👤 Profile</a>
+        <a href="pass.html">🔑 Password</a>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </nav>
 
@@ -94,18 +108,18 @@
             </div>
 
             <div class="card">
-                <h3>💰 Monthly Deductions</h3>
+                <h3>💰 Monthly Deductions (EE Share)</h3>
                 <div class="stat-row"><span class="stat-label">SSS Premium</span><span class="stat-value">₱ <span id="sssDed">0.00</span></span></div>
                 <div class="stat-row"><span class="stat-label">PhilHealth</span><span class="stat-value">₱ <span id="phDed">0.00</span></span></div>
-                <div class="stat-row"><span class="stat-label">Pag-IBIG</span><span class="stat-value">₱ <span id="hdmfDed">0.00</span></span></div>
+                <div class="stat-row"><span class="stat-label">Pag-IBIG (HDMF)</span><span class="stat-value">₱ <span id="hdmfDed">0.00</span></span></div>
                 <div class="stat-row" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 15px;">
-                    <span class="stat-label" style="color: var(--dark);">Total Deduction</span>
+                    <span class="stat-label" style="color: var(--dark);">Total Monthly Contribution</span>
                     <span class="stat-value" style="color: #ff4d4d; font-size: 18px;">₱ <span id="totalDed">0.00</span></span>
                 </div>
             </div>
         </div>
 
-        <div class="card table-card" id="adminView" style="display: none;">
+        <div class="card" id="adminView" style="display: none;">
             <h3>Staff Contribution List</h3>
             <div style="overflow-x: auto;">
                 <table>
@@ -118,8 +132,7 @@
                             <th>TIN</th>
                         </tr>
                     </thead>
-                    <tbody id="contributionTableBody">
-                        </tbody>
+                    <tbody id="contributionTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -128,7 +141,7 @@
     <script>
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const role = localStorage.getItem('role');
         const empID = localStorage.getItem('employeeID');
@@ -136,7 +149,7 @@
         async function init() {
             if (role === 'admin') {
                 document.getElementById('adminEmpLink').style.display = 'flex';
-                document.getElementById('adminSetLink').style.display = 'flex';
+                document.getElementById('adminLink').style.display = 'flex';
                 document.getElementById('adminView').style.display = 'block';
                 document.getElementById('employeeView').style.display = 'none';
                 document.getElementById('pageTitle').innerText = "Staff Contributions";
@@ -147,7 +160,7 @@
         }
 
         async function loadMyContributions() {
-            const { data, error } = await supabase
+            const { data, error } = await _supabase
                 .from('employees')
                 .select('*')
                 .eq('id_number', empID)
@@ -159,20 +172,41 @@
                 document.getElementById('hdmfNo').innerText = data.pagibig_no || 'N/A';
                 document.getElementById('tinNo').innerText = data.tin_no || 'N/A';
 
-                // Static placeholders for deduction logic (usually calculated from salary)
-                const sss = 1350.00;
-                const ph = 450.00;
-                const hdmf = 200.00;
-                
-                document.getElementById('sssDed').innerText = sss.toFixed(2);
-                document.getElementById('phDed').innerText = ph.toFixed(2);
-                document.getElementById('hdmfDed').innerText = hdmf.toFixed(2);
-                document.getElementById('totalDed').innerText = (sss + ph + hdmf).toFixed(2);
+                const salary = parseFloat(data.basic_salary) || 0;
+
+                // 1. SSS EE Share (2025/2026 approx 4.5% capped at 30k MSC)
+                let sssDed = 0;
+                if (salary > 0) {
+                    const msc = Math.min(Math.max(salary, 5000), 30000);
+                    sssDed = msc * 0.045;
+                }
+
+                // 2. PhilHealth EE Share (5% total split 50/50 = 2.5% of basic)
+                // Floor 10k, Ceiling 100k
+                let phDed = 0;
+                if (salary > 0) {
+                    const phBase = Math.min(Math.max(salary, 10000), 100000);
+                    phDed = phBase * 0.025;
+                }
+
+                // 3. Pag-IBIG (HDMF) EE Share (2% capped at 10k base = ₱200)
+                let hdmfDed = 0;
+                if (salary > 0) {
+                    const hdmfBase = Math.min(salary, 10000);
+                    hdmfDed = hdmfBase * 0.02;
+                }
+
+                const total = sssDed + phDed + hdmfDed;
+
+                document.getElementById('sssDed').innerText = sssDed.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('phDed').innerText = phDed.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('hdmfDed').innerText = hdmfDed.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('totalDed').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
         }
 
         async function loadAllContributions() {
-            const { data, error } = await supabase
+            const { data, error } = await _supabase
                 .from('employees')
                 .select('full_name, sss_no, philhealth_no, pagibig_no, tin_no')
                 .order('full_name', { ascending: true });
@@ -191,7 +225,8 @@
             }
         }
 
-        function handleLogout() {
+        async function handleLogout() {
+            await _supabase.auth.signOut();
             localStorage.clear();
             window.location.href = 'index.html';
         }

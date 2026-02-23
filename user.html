@@ -3,25 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Settings | Payroll Portal</title>
+    <title>My Profile | Payroll Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
-            --primary: #3ecf8e; 
-            --dark: #1e3a8a; 
-            --bg-blue: #58ccff; 
-            --card-white: #ffffff;
-            --sidebar-width: 240px;
+            --primary: #3ecf8e; --dark: #1e3a8a; --bg-blue: #58ccff; --card-white: #ffffff; --sidebar-width: 240px;
         }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-blue); 
-            margin: 0; 
-            display: flex; 
-            min-height: 100vh;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-blue); margin: 0; display: flex; min-height: 100vh; }
         
-        /* --- NAVIGATION SIDEBAR --- */
+        /* --- DESKTOP NAV (Left Sidebar) --- */
         nav { 
             width: var(--sidebar-width); 
             background: var(--dark); 
@@ -29,197 +19,173 @@
             color: white; 
             padding: 20px; 
             position: fixed; 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box; 
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
         }
-        nav h2 { 
-            font-size: 1.2rem; 
-            border-bottom: 1px solid rgba(255,255,255,0.2); 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
-        }
-        nav a { 
-            display: block; 
-            color: #d1d5db; 
-            text-decoration: none; 
-            padding: 12px; 
-            border-radius: 5px; 
-            margin: 8px 0; 
-            transition: 0.3s; 
-            font-size: 14px;
-        }
+        nav h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        nav a { display: block; color: #d1d5db; text-decoration: none; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; transition: 0.3s; }
         nav a:hover { background: rgba(255,255,255,0.1); color: white; }
         nav a.active { background: var(--primary); color: white; font-weight: 600; }
 
-        .btn-logout { 
-            background: #ff4d4d; 
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            width: 100%; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            margin-top: auto; 
-            font-weight: bold;
-        }
+        .btn-logout { background:#ff4d4d; color:white; border:none; padding:10px; border-radius:5px; margin-top:auto; cursor:pointer; font-weight: bold; }
 
-        /* --- MAIN CONTENT AREA --- */
-        main { 
-            margin-left: var(--sidebar-width); 
-            padding: 30px; 
-            width: 100%;
-            box-sizing: border-box;
-        }
+        /* --- MAIN CONTENT --- */
+        main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; box-sizing: border-box; }
         h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
         
-        .card { 
-            background: var(--card-white); 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
-            max-width: 500px; 
-            margin: 0 auto;
-        }
+        .card { background: var(--card-white); padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--dark); font-size: 13px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #f8fafc; }
+        input:focus { outline: none; border-color: var(--primary); background: #fff; }
         
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); font-size: 14px; }
-        
-        input { 
-            padding: 12px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 8px; 
-            font-size: 14px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .btn-save { 
-            background: var(--primary); 
-            color: white; 
-            padding: 15px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            font-size: 16px;
-            width: 100%;
-            transition: 0.3s;
-        }
+        .readonly-info { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+        .btn-save { background: var(--primary); color: white; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
         .btn-save:hover { background: #34b37b; }
+        #statusMsg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; }
 
-        #statusMsg { font-weight: 500; text-align: center; margin-top: 15px; font-size: 14px; }
-
+        /* --- MOBILE LAYOUT (Top Nav) --- */
         @media (max-width: 1024px) {
             body { flex-direction: column; }
             nav { 
-                width: 100%; height: auto; position: sticky; top: 0; 
-                flex-direction: row; padding: 10px; overflow-x: auto; gap: 10px;
+                width: 100%; 
+                height: auto; 
+                position: fixed; 
+                top: 0; 
+                left: 0;
+                flex-direction: row; 
+                padding: 10px; 
+                overflow-x: auto; 
+                white-space: nowrap;
+                gap: 10px;
+                border-bottom: 2px solid rgba(0,0,0,0.1);
             }
             nav h2 { display: none; }
-            nav a { padding: 10px 15px; font-size: 12px; }
-            .btn-logout { width: auto; margin-top: 0; }
-            main { margin-left: 0; padding: 20px; }
+            nav a { margin: 0; padding: 10px 15px; display: inline-block; font-size: 13px; }
+            .btn-logout { margin-top: 0; padding: 10px 15px; }
+            
+            main { 
+                margin-left: 0; 
+                margin-top: 70px; /* Space for the top nav */
+                padding: 20px; 
+            }
+            .form-row { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5rem; text-align: center; }
         }
     </style>
 </head>
-
 <body>
     <nav>
-        <h2>Payroll Portal</h2>
-        <a href="payroll.html">👥 Employees</a>
+        <h2>Payroll Pro</h2>
+        <a href="dashboard.html">🏠 Home</a>
+        <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
         <a href="leaves.html">📅 Leaves</a>
         <a href="payslip.html">📄 Payslips</a>
-        <a href="contribution.html">🏦 Contributions</a>
-        <a href="user.html" class="active">👤 Account</a>
+        <a href="user.html" class="active">👤 Profile</a>
+        <a href="pass.html">🔑 Password</a>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </nav>
 
     <main>
-        <h1>Account Settings</h1>
+        <h1>My Profile</h1>
         <div class="card">
-            <h3 style="margin-top: 0; color: var(--dark);">Security & Password</h3>
-            <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
-                Update your login credentials below. For security, do not share your password.
-            </p>
-            
-            <form id="passwordForm">
-                <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" id="newPassword" placeholder="Enter at least 6 characters" required>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img id="profileImg" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f1f5f9;">
+                <h3 id="dispName" style="margin: 10px 0 0 0; color: var(--dark);">---</h3>
+                <p id="dispRole" style="margin: 0; color: #64748b; font-size: 14px;">---</p>
+            </div>
+
+            <form id="profileForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Employee ID (Fixed)</label>
+                        <input type="text" id="resID" class="readonly-info" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address (Fixed)</label>
+                        <input type="text" id="resEmail" class="readonly-info" readonly>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Confirm New Password</label>
-                    <input type="password" id="confirmPassword" placeholder="Repeat new password" required>
+                    <label>Contact Number</label>
+                    <input type="text" id="editContact" placeholder="0912 345 6789">
                 </div>
-                
-                <button type="submit" class="btn-save">Update Password</button>
+
+                <div class="form-group">
+                    <label>Home Address</label>
+                    <textarea id="editAddress" rows="3" placeholder="Enter your full address"></textarea>
+                </div>
+
+                <button type="submit" class="btn-save" id="saveBtn">Save Changes</button>
             </form>
             <p id="statusMsg"></p>
         </div>
     </main>
 
     <script>
-        // --- INITIALIZE SUPABASE ---
         const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        const form = document.getElementById('passwordForm');
-        const statusMsg = document.getElementById('statusMsg');
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Verify user is logged in
-        async function checkAuth() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
+        const empID = localStorage.getItem('employeeID') || 'ADMIN-001'; 
+        const role = localStorage.getItem('role');
+
+        async function loadData() {
+            if (role === 'admin') {
+                const adminLink = document.getElementById('adminEmpLink');
+                if(adminLink) adminLink.style.display = 'inline-block';
+            }
+
+            const { data, error } = await _supabase.from('employees').select('*').eq('id_number', empID).single();
+            
+            if (data) {
+                document.getElementById('dispName').innerText = data.full_name;
+                document.getElementById('dispRole').innerText = data.position;
+                document.getElementById('resID').value = data.id_number;
+                document.getElementById('resEmail').value = data.email;
+                document.getElementById('editContact').value = data.contact_number || '';
+                document.getElementById('editAddress').value = data.address || '';
+                document.getElementById('profileImg').src = `https://ui-avatars.com/api/?background=1e3a8a&color=fff&name=${encodeURIComponent(data.full_name)}`;
             }
         }
 
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const btn = document.getElementById('saveBtn');
+            const msg = document.getElementById('statusMsg');
+            
+            btn.disabled = true;
+            msg.innerText = "Saving...";
+            msg.style.color = "gray";
 
-            if (newPassword !== confirmPassword) {
-                statusMsg.style.color = "red";
-                statusMsg.innerText = "❌ Passwords do not match.";
-                return;
-            }
-
-            if (newPassword.length < 6) {
-                statusMsg.style.color = "red";
-                statusMsg.innerText = "❌ Password must be at least 6 characters.";
-                return;
-            }
-
-            statusMsg.innerText = "Updating security credentials...";
-            statusMsg.style.color = "gray";
-
-            const { data, error } = await supabase.auth.updateUser({
-                password: newPassword
-            });
+            const { error } = await _supabase
+                .from('employees')
+                .update({
+                    contact_number: document.getElementById('editContact').value,
+                    address: document.getElementById('editAddress').value
+                })
+                .eq('id_number', empID);
 
             if (error) {
-                statusMsg.style.color = "red";
-                statusMsg.innerText = "Error: " + error.message;
+                msg.innerText = "Error: " + error.message;
+                msg.style.color = "red";
             } else {
-                statusMsg.style.color = "#3ecf8e";
-                statusMsg.innerText = "✅ Password updated successfully!";
-                form.reset();
+                msg.innerText = "✅ Profile updated successfully!";
+                msg.style.color = "#3ecf8e";
             }
+            btn.disabled = false;
         });
 
-        async function handleLogout() {
-            await supabase.auth.signOut();
-            localStorage.clear();
-            window.location.href = 'index.html';
+        function handleLogout() { 
+            _supabase.auth.signOut();
+            localStorage.clear(); 
+            window.location.href = 'index.html'; 
         }
-
-        checkAuth();
+        loadData();
     </script>
 </body>
 </html>
