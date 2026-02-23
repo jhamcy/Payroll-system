@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard | Payroll Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg-blue: #58ccff; 
+            --card-white: #ffffff;
+            --sidebar-width: 240px;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-blue); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh;
+            color: #334155;
+        }
+        
+        /* --- NAVIGATION LOGIC --- */
+        nav { 
+            background: var(--dark); 
+            color: white; 
+            display: flex;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        @media (min-width: 851px) {
+            nav {
+                width: var(--sidebar-width);
+                height: 100vh;
+                position: fixed;
+                left: 0;
+                top: 0;
+                flex-direction: column;
+                padding: 20px;
+            }
+            main { margin-left: var(--sidebar-width); padding: 30px; width: 100%; }
+            nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+            .btn-logout { margin-top: auto; display: block; }
+        }
+
+        @media (max-width: 850px) {
+            nav {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                top: 0;
+                left: 0;
+                flex-direction: row;
+                padding: 10px 5px;
+                overflow-x: auto;
+                white-space: nowrap;
+                justify-content: flex-start;
+                gap: 5px;
+            }
+            nav h2 { display: none; }
+            main { margin-top: 70px; padding: 15px; width: 100%; }
+            .btn-logout { background: #ff4d4d; padding: 8px 12px; }
+        }
+
+        nav a { 
+            display: flex; 
+            align-items: center; 
+            color: #d1d5db; 
+            text-decoration: none; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+            font-size: 14px; 
+        }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+
+        .btn-logout { 
+            background: #ff4d4d; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+
+        /* --- DASHBOARD STYLES --- */
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .profile-card, .info-card { background: var(--card-white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .profile-card { text-align: center; }
+        .profile-card img { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f1f5f9; margin-bottom: 10px; }
+        .id-badge { display: inline-block; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; }
+
+        .credit-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .mini-card { background: #f8fafc; padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid var(--primary); }
+        .mini-card small { font-size: 9px; color: #64748b; text-transform: uppercase; display: block; }
+        .mini-card div { font-size: 18px; font-weight: bold; color: var(--dark); }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .info-item label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; }
+        .info-item span { font-size: 14px; color: #1e293b; font-weight: 500; }
+
+        @media (max-width: 600px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Payroll Pro</h2>
+        <a href="dashboard.html" class="active">🏠 Home</a>
+        <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
+        <a href="leaves.html">📅 Leaves</a>
+        <a href="payslip.html">📄 Payslips</a>
+        <a href="contribution.html">🏦 Contributions</a>
+        <a href="payroll.html" id="adminLink" style="display:none;">⚙️ Register</a>
+        <a href="user.html">👤 Profile</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1 id="welcomeText">Welcome!</h1>
+
+        <div class="dashboard-grid">
+            <div class="profile-card">
+                <img src="https://ui-avatars.com/api/?background=1e3a8a&color=fff&name=User" id="profileImg" alt="Avatar">
+                <h2 id="dispFullName" style="margin:5px 0;">Loading...</h2>
+                <p id="dispPosition" style="margin:0; color:#64748b;">---</p>
+                <div class="id-badge" id="dispID">ID: ---</div>
+                
+                <div class="credit-summary">
+                    <div class="mini-card">
+                        <small>Sick</small>
+                        <div id="resSL">0</div>
+                    </div>
+                    <div class="mini-card" style="border-bottom-color: #58ccff;">
+                        <small>Vacation</small>
+                        <div id="resVL">0</div>
+                    </div>
+                    <div class="mini-card" style="border-bottom-color: #a855f7;">
+                        <small>Solo</small>
+                        <div id="resSPL">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3 style="margin-top:0; color: var(--dark); border-bottom: 1px solid #eee; padding-bottom:10px;">Personal Record</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Email Address</label>
+                        <span id="resEmail">---</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Contact Number</label>
+                        <span id="resContact">---</span>
+                    </div>
+                    <div class="info-item" style="grid-column: span 2;">
+                        <label>Home Address</label>
+                        <span id="resAddress">---</span>
+                    </div>
+                    <div class="info-item">
+                        <label>SSS / PhilHealth / TIN</label>
+                        <span id="govSummary">---</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadProfile() {
+            const empID = localStorage.getItem('employeeID');
+            const role = localStorage.getItem('role');
+
+            // Admin-only view adjustments
+            if (role === 'admin') {
+                if(document.getElementById('adminLink')) document.getElementById('adminLink').style.display = 'flex';
+                if(document.getElementById('adminEmpLink')) document.getElementById('adminEmpLink').style.display = 'flex';
+            }
+
+            const { data, error } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('id_number', empID)
+                .single();
+
+            if (data) {
+                document.getElementById('welcomeText').innerText = `Hello, ${data.full_name.split(' ')[0]}!`;
+                document.getElementById('dispFullName').innerText = data.full_name;
+                document.getElementById('dispPosition').innerText = data.position;
+                document.getElementById('dispID').innerText = `ID: ${data.id_number}`;
+                document.getElementById('profileImg').src = `https://ui-avatars.com/api/?background=1e3a8a&color=fff&name=${encodeURIComponent(data.full_name)}`;
+
+                document.getElementById('resSL').innerText = data.sl_credits || 0;
+                document.getElementById('resVL').innerText = data.vl_credits || 0;
+                document.getElementById('resSPL').innerText = data.spl_credits || 0;
+
+                document.getElementById('resEmail').innerText = data.email;
+                document.getElementById('resContact').innerText = data.contact_number;
+                document.getElementById('resAddress').innerText = data.address;
+                document.getElementById('govSummary').innerText = `${data.sss_no || 'N/A'} / ${data.philhealth_no || 'N/A'} / ${data.tin_no || 'N/A'}`;
+            }
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Process Payout</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg: #f1f5f9; 
+            --sidebar-width: 240px;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        /* --- NAVIGATION --- */
+        nav { 
+            background: var(--dark); 
+            color: white; 
+            padding: 15px;
+            z-index: 1000;
+        }
+
+        nav h2 { margin: 0 0 15px 0; font-size: 1.2rem; }
+        
+        nav a { 
+            display: inline-block; 
+            color: #d1d5db; 
+            padding: 10px 15px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            font-size: 14px;
+            margin-right: 5px;
+        }
+
+        nav a.active { background: var(--primary); color: white; }
+
+        /* --- MAIN CONTENT --- */
+        main { 
+            padding: 20px; 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        .form-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        }
+
+        .grid-2 { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 15px; 
+        }
+
+        /* --- DESKTOP VIEW --- */
+        @media (min-width: 851px) {
+            body { flex-direction: row; } 
+            nav { 
+                width: var(--sidebar-width); 
+                height: 100vh; 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                padding: 25px;
+            }
+            nav a { display: block; margin-bottom: 8px; margin-right: 0; }
+            main { margin-left: var(--sidebar-width); padding: 40px; max-width: 900px; }
+            .grid-2 { grid-template-columns: 1fr 1fr; } 
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #64748b; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; }
+        input[readonly] { background: #f8fafc; color: #475569; font-weight: bold; cursor: not-allowed; }
+        
+        .net-pay-display { 
+            background: #ecfdf5; border: 1px solid #10b981; padding: 20px; 
+            border-radius: 8px; margin-top: 20px; text-align: center;
+        }
+        .net-pay-display h2 { margin: 0; color: #065f46; font-size: 2rem; }
+
+        .btn-submit { 
+            width: 100%; padding: 15px; background: var(--dark); color: white; 
+            border: none; border-radius: 8px; cursor: pointer; font-weight: bold; 
+            font-size: 1rem; margin-top: 20px; 
+        }
+        .btn-logout { background: transparent; color: #ff4d4d; border: none; cursor: pointer; padding: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Admin Panel</h2>
+        <a href="dashboard.html">🏠 Dashboard</a>
+        <a href="employee.html">👥 Employees</a>
+        <a href="payroll.html" class="active">💰 Process Payout</a>
+        <a href="payslip.html">📄 View Payslips</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Process Employee Payout</h1>
+        <p style="color: #64748b; margin-top: -10px;">Calculations aligned with 2026 SSS/PhilHealth/TRAIN Law updates.</p>
+
+        <div class="form-card">
+            <form id="payoutForm">
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label>Select Employee</label>
+                        <select id="selectEmployee" required>
+                            <option value="">-- Choose Employee --</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Pay Period</label>
+                        <input type="text" id="payPeriod" placeholder="Feb 01 - Feb 15, 2026" required>
+                    </div>
+                </div>
+
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 30px;">1. Earnings</h3>
+                <div class="grid-2">
+                    <div class="input-group"><label>Basic Salary (Monthly)</label><input type="number" id="basicSalary" value="0" oninput="calculateNet()"></div>
+                    <div class="input-group"><label>Overtime Pay</label><input type="number" id="otPay" value="0" oninput="calculateNet()"></div>
+                </div>
+
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 30px;">2. Attendance Adjustments</h3>
+                <div class="grid-2">
+                    <div class="input-group"><label>Lates/Absences (Deduction)</label><input type="number" id="absentDed" value="0" oninput="calculateNet()"></div>
+                </div>
+
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 30px;">3. Government Deductions</h3>
+                <div class="grid-2">
+                    <div class="input-group"><label>SSS (Employee Share)</label><input type="text" id="sssVal" value="0.00" readonly></div>
+                    <div class="input-group"><label>PhilHealth (Employee Share)</label><input type="text" id="phVal" value="0.00" readonly></div>
+                    <div class="input-group"><label>Pag-IBIG (Employee Share)</label><input type="text" id="piVal" value="0.00" readonly></div>
+                    <div class="input-group"><label>Withholding Tax (TRAIN Law)</label><input type="text" id="taxVal" value="0.00" readonly></div>
+                </div>
+
+                <div class="net-pay-display">
+                    <small>CALCULATED NET TAKE-HOME PAY</small>
+                    <h2 id="netDisplay">₱ 0.00</h2>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btnSubmit">Post Payout to Employee Portal</button>
+            </form>
+        </div>
+    </main>
+
+    
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadEmployees() {
+            const { data } = await supabase.from('employees').select('id_number, full_name');
+            const dropdown = document.getElementById('selectEmployee');
+            if(data) {
+                data.forEach(emp => {
+                    let opt = document.createElement('option');
+                    opt.value = emp.id_number;
+                    opt.textContent = `${emp.full_name} (${emp.id_number})`;
+                    dropdown.appendChild(opt);
+                });
+            }
+        }
+
+        function calculateNet() {
+            const basic = parseFloat(document.getElementById('basicSalary').value) || 0;
+            const ot = parseFloat(document.getElementById('otPay').value) || 0;
+            const absences = parseFloat(document.getElementById('absentDed').value) || 0;
+            const gross = (basic + ot) - absences;
+
+            // --- 2026 UPDATED STATUTORY RATES ---
+            
+            // 1. SSS: 2026 Rate is 15% (5% employee, 10% employer)
+            // Min MSC: ₱5,000 | Max MSC: ₱35,000
+            let msc = Math.max(5000, Math.min(basic, 35000));
+            let sss = msc * 0.05;
+
+            // 2. PhilHealth: 5% Rate shared 50/50 (2.5% each)
+            // Max Basic Ceiling: ₱100,000
+            let ph = (Math.min(basic, 100000) * 0.05) / 2;
+            if (basic < 10000) ph = 250; // Minimum floor
+
+            // 3. Pag-IBIG: Fixed ₱200 for salaries > ₱1,500
+            let pi = basic > 1500 ? 200 : (basic * 0.01);
+
+            // 4. Withholding Tax (2026 TRAIN Law Table)
+            let taxableIncome = gross - (sss + ph + pi);
+            let tax = 0;
+            if (taxableIncome > 20833 && taxableIncome <= 33333) {
+                tax = (taxableIncome - 20833) * 0.15;
+            } else if (taxableIncome > 33333 && taxableIncome <= 66667) {
+                tax = 1875 + (taxableIncome - 33333) * 0.20;
+            } else if (taxableIncome > 66667 && taxableIncome <= 166667) {
+                tax = 8541.67 + (taxableIncome - 66667) * 0.25;
+            } else if (taxableIncome > 166667 && taxableIncome <= 666667) {
+                tax = 33541.67 + (taxableIncome - 166667) * 0.30;
+            } else if (taxableIncome > 666667) {
+                tax = 183541.67 + (taxableIncome - 666667) * 0.35;
+            }
+
+            // Update UI
+            document.getElementById('sssVal').value = sss.toFixed(2);
+            document.getElementById('phVal').value = ph.toFixed(2);
+            document.getElementById('piVal').value = pi.toFixed(2);
+            document.getElementById('taxVal').value = tax.toFixed(2);
+
+            const totalDeductions = sss + ph + pi + tax;
+            const net = gross - totalDeductions;
+            document.getElementById('netDisplay').innerText = `₱ ${net.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            
+            return net;
+        }
+
+        document.getElementById('payoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerText = "Processing..."; btn.disabled = true;
+
+            const { error } = await supabase.from('payslips').insert([{
+                employee_id: document.getElementById('selectEmployee').value,
+                pay_period: document.getElementById('payPeriod').value,
+                basic_salary: parseFloat(document.getElementById('basicSalary').value),
+                overtime_pay: parseFloat(document.getElementById('otPay').value),
+                absence_deduction: parseFloat(document.getElementById('absentDed').value),
+                sss_deduction: parseFloat(document.getElementById('sssVal').value),
+                philhealth_deduction: parseFloat(document.getElementById('phVal').value),
+                pagibig_deduction: parseFloat(document.getElementById('piVal').value),
+                tax_deduction: parseFloat(document.getElementById('taxVal').value),
+                net_pay: parseFloat(document.getElementById('netDisplay').innerText.replace('₱ ', '').replace(/,/g, ''))
+            }]);
+
+            if (error) { alert("Error: " + error.message); btn.disabled = false; }
+            else { alert("Success!"); location.reload(); }
+        });
+
+        loadEmployees();
+        function handleLogout() { localStorage.clear(); window.location.href = 'index.html'; }
+    </script>
+</body>
+</html>

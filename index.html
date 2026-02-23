@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Payroll Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg-blue: #58ccff; 
+            --card-white: #ffffff;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: var(--bg-blue); 
+            margin: 0; 
+        }
+
+        .login-card { 
+            background: var(--card-white); 
+            padding: 2.5rem; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            width: 100%;
+            max-width: 340px; 
+            text-align: center;
+        }
+
+        h2 { color: var(--dark); margin-bottom: 5px; font-size: 1.6rem; }
+        p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 30px; }
+
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--dark); margin-bottom: 5px; }
+
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 14px;
+        }
+
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: var(--dark); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 10px;
+        }
+
+        .error { color: #ff4d4d; font-size: 0.85rem; margin-top: 15px; min-height: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Payroll Portal</h2>
+        <p class="subtitle">Enter credentials to access your portal</p>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Username (ID Number)</label>
+                <input type="text" id="username" placeholder="Enter username or ID" required>
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit">Sign In</button>
+        </form>
+
+        <p id="message" class="error"></p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = document.getElementById('message');
+            const usernameInput = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            message.textContent = "Authenticating...";
+            message.style.color = "gray";
+
+            let targetEmail = "";
+            let isAdmin = false;
+
+            // 1. DETERMINE THE TARGET EMAIL
+            if (usernameInput.toLowerCase() === 'admin') {
+                targetEmail = 'admin@payroll.portal'; 
+                isAdmin = true;
+            } else {
+                const { data: employee, error: searchError } = await supabase
+                    .from('employees')
+                    .select('email, id_number')
+                    .eq('id_number', usernameInput)
+                    .single();
+
+                if (searchError || !employee) {
+                    message.textContent = "Username (ID Number) not found.";
+                    message.style.color = "#ff4d4d";
+                    return;
+                }
+                targetEmail = employee.email;
+            }
+
+            // 2. SIGN IN WITH SUPABASE AUTH
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
+                email: targetEmail,
+                password: password,
+            });
+
+            if (authError) {
+                message.textContent = "Invalid password.";
+                message.style.color = "#ff4d4d";
+            } else {
+                // 3. STORE SESSION INFO AND REDIRECT
+                localStorage.setItem('employeeID', usernameInput);
+                
+                if (isAdmin) {
+                    localStorage.setItem('role', 'admin');
+                    // Changed from setting.html to payroll.html
+                    window.location.href = 'payroll.html';
+                } else {
+                    localStorage.setItem('role', 'user');
+                    // Changed from payroll.html to dashboard.html
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

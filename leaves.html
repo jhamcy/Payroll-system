@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management | Payroll Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --primary: #3ecf8e; 
+            --dark: #1e3a8a; 
+            --bg-blue: #58ccff; 
+            --card-white: #ffffff;
+            --sidebar-width: 240px;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-blue); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh;
+            color: #334155;
+        }
+        
+        /* --- NAVIGATION --- */
+        nav { background: var(--dark); color: white; display: flex; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+
+        @media (min-width: 851px) {
+            nav { width: var(--sidebar-width); height: 100vh; position: fixed; left: 0; top: 0; flex-direction: column; padding: 20px; }
+            main { margin-left: var(--sidebar-width); padding: 30px; width: calc(100% - var(--sidebar-width)); }
+            nav h2 { display: block; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; }
+        }
+
+        @media (max-width: 850px) {
+            nav { width: 100%; height: auto; position: fixed; top: 0; left: 0; flex-direction: row; padding: 10px 5px; overflow-x: auto; white-space: nowrap; gap: 5px; }
+            nav h2 { display: none; }
+            main { margin-top: 70px; padding: 15px; width: 100%; }
+        }
+
+        nav a { display: flex; align-items: center; color: #d1d5db; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px; }
+        nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav a.active { background: var(--primary); color: white; font-weight: 600; }
+        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
+
+        /* --- DASHBOARD & LAYOUT --- */
+        h1 { color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.1); margin-top: 0; }
+        .credits-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .credit-card { background: var(--card-white); padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .credit-card h4 { margin: 0; color: #64748b; font-size: 11px; text-transform: uppercase; }
+        .credit-card .count { font-size: 22px; font-weight: bold; color: var(--dark); margin: 5px 0; }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: var(--card-white); padding: 20px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .btn-submit { background: var(--dark); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; background: #f8fafc; color: #64748b; padding: 12px; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        
+        .status-badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .pending { background: #fef3c7; color: #92400e; }
+        .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; }
+
+        .admin-actions button { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; color: white; margin-right: 3px; }
+        .btn-approve { background: #3ecf8e; }
+        .btn-reject { background: #ff4d4d; }
+
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>Payroll Pro</h2>
+        <a href="payroll.html">🏠 Home</a>
+        <a href="employee.html" id="adminEmpLink" style="display:none;">👥 Employees</a>
+        <a href="leaves.html" class="active">📅 Leaves</a>
+        <a href="payslip.html">📄 Payslips</a>
+        <a href="contribution.html">🏦 Contributions</a>
+        <a href="setting.html" id="adminSetLink" style="display:none;">⚙️ Register</a>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </nav>
+
+    <main>
+        <h1>Leave Management</h1>
+
+        <div class="credits-container" id="creditsDashboard">
+            <div class="credit-card"><h4>Sick Leave</h4><div class="count" id="slCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #58ccff;"><h4>Vacation Leave</h4><div class="count" id="vlCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #a855f7;"><h4>Solo Parent</h4><div class="count" id="splCount">0.00</div></div>
+            <div class="credit-card" style="border-top-color: #ff4d4d;"><h4>LWOP</h4><div class="count" id="lwopCount">0</div></div>
+        </div>
+        
+        <div class="layout-grid">
+            <div class="card" id="applicationFormCard">
+                <h3 style="margin-top:0">Submit Request</h3>
+                <form id="leaveForm">
+                    <div class="form-group">
+                        <label>Type of Leave</label>
+                        <select id="leaveType" required>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Vacation Leave">Vacation Leave</option>
+                            <option value="Solo Parent Leave">Solo Parent Leave</option>
+                            <option value="Authorized Leave w/out Pay">LWOP (No Pay)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dates</label>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="date" id="startDate" required title="Start Date">
+                            <input type="date" id="endDate" required title="End Date">
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Reason</label><textarea id="reason" rows="2" required></textarea></div>
+                    <button type="submit" class="btn-submit">Submit Application</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0" id="tableTitle">My History</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th id="adminColName" style="display:none;">Employee</th>
+                                <th>Leave Type</th>
+                                <th>Dates</th>
+                                <th>Status</th>
+                                <th id="adminColAction" style="display:none;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://wtapkrvfplkyihdvjybm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YXBrcnZmcGxreGloZHZqeWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Mzg5MzQsImV4cCI6MjA4NzQxNDkzNH0.4F24IOW6CT_AB8hwWo0Q1Q-sX6qrPXageAARd26F75Y';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const role = localStorage.getItem('role');
+        const empID = localStorage.getItem('employeeID');
+
+        async function init() {
+            if (role === 'admin') {
+                document.getElementById('adminEmpLink').style.display = 'flex';
+                document.getElementById('adminSetLink').style.display = 'flex';
+                document.getElementById('adminColName').style.display = 'table-cell';
+                document.getElementById('adminColAction').style.display = 'table-cell';
+                document.getElementById('tableTitle').innerText = "All Requests";
+                document.getElementById('creditsDashboard').style.display = 'none';
+                document.getElementById('applicationFormCard').style.display = 'none';
+                loadAllLeaves();
+            } else {
+                loadMyLeaves();
+                loadMyCredits();
+            }
+        }
+
+        async function loadMyCredits() {
+            const { data } = await supabase.from('employees').select('sl_credits, vl_credits, spl_credits').eq('id_number', empID).single();
+            if (data) {
+                document.getElementById('slCount').innerText = data.sl_credits || "0.00";
+                document.getElementById('vlCount').innerText = data.vl_credits || "0.00";
+                document.getElementById('splCount').innerText = data.spl_credits || "0.00";
+            }
+        }
+
+        document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.from('leaves').insert([{
+                employee_id: empID,
+                leave_type: document.getElementById('leaveType').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                reason: document.getElementById('reason').value,
+                status: 'pending'
+            }]);
+            if (error) alert(error.message); else { alert("Submitted!"); location.reload(); }
+        });
+
+        async function loadMyLeaves() {
+            const { data } = await supabase.from('leaves').select('*').eq('employee_id', empID).order('created_at', { ascending: false });
+            renderTable(data);
+        }
+
+        async function loadAllLeaves() {
+            const { data } = await supabase.from('leaves').select('*, employees(full_name)').order('created_at', { ascending: false });
+            renderTable(data);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('leaveTableBody');
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td style="display:${role === 'admin' ? 'table-cell' : 'none'}"><strong>${row.employees?.full_name || '...'}</strong></td>
+                    <td>${row.leave_type}</td>
+                    <td>${row.start_date} to ${row.end_date}</td>
+                    <td><span class="status-badge ${row.status}">${row.status}</span></td>
+                    <td style="display:${role === 'admin' ? 'table-cell' : 'none'}">
+                        ${row.status === 'pending' ? `
+                            <button class="btn-approve" onclick="updateStatus('${row.id}', 'approved')">✔</button>
+                            <button class="btn-reject" onclick="updateStatus('${row.id}', 'rejected')">✖</button>
+                        ` : '--'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateStatus(id, newStatus) {
+            if (newStatus === 'approved') {
+                const { data: leaveReq } = await supabase.from('leaves').select('*').eq('id', id).single();
+                const typeMap = { 
+                    'Sick Leave': 'sl_credits', 
+                    'Vacation Leave': 'vl_credits', 
+                    'Solo Parent Leave': 'spl_credits' 
+                };
+                const col = typeMap[leaveReq.leave_type];
+
+                if (col) {
+                    // Calculate days inclusive
+                    const start = new Date(leaveReq.start_date);
+                    const end = new Date(leaveReq.end_date);
+                    const days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+                    // Get employee's current credit balance
+                    const { data: emp } = await supabase.from('employees').select(col).eq('id_number', leaveReq.employee_id).single();
+                    
+                    if (emp) {
+                        const newBalance = (emp[col] || 0) - days;
+                        // Update the employee table with new balance
+                        await supabase.from('employees').update({ [col]: newBalance }).eq('id_number', leaveReq.employee_id);
+                    }
+                }
+            }
+            // Update the leave request status in the leaves table
+            await supabase.from('leaves').update({ status: newStatus }).eq('id', id);
+            location.reload();
+        }
+
+        function handleLogout() { localStorage.clear(); window.location.href = 'index.html'; }
+        init();
+    </script>
+</body>
+</html>
